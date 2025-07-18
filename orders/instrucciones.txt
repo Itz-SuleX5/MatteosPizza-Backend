@@ -1,0 +1,293 @@
+✦ Claro, he analizado el código del frontend para extraer los endpoints que consume, el formato de las respuestas
+  que espera y los datos que se intercambian. A continuación, te presento un resumen detallado, estructurado según
+  las tres apps de Django que mencionaste (products, users, orders), para que puedas desarrollar el backend.
+
+
+  Todos los endpoints requieren un token de autenticación en la cabecera: Authorization: Bearer <token>.
+
+  ---
+
+  App: products
+
+  Esta app se encarga de gestionar la información de las pizzas disponibles.
+
+  1. Obtener todos los productos (pizzas)
+
+
+   * Endpoint: GET /api/products/api/
+   * Descripción: Devuelve una lista de todas las pizzas disponibles en el menú. Es consumido por el hook
+     usePizzas.js para mostrar el contenido principal de la tienda.
+   * Request: No requiere cuerpo (body).
+   * Response (Formato y Datos):
+       * Un objeto JSON que contiene una clave products.
+       * products es un array de objetos, donde cada objeto representa una pizza.
+
+
+
+    1     {
+    2       "products": [
+    3         {
+    4           "id": 1,
+    5           "nombre": "Margherita Clásica",
+    6           "descripcion": "La auténtica pizza italiana con ingredientes frescos.",
+    7           "ingredientes": "Tomate, mozzarella, albahaca fresca, aceite de oliva",
+    8           "precio": "12.99",
+    9           "imagen_url": "http://example.com/images/margherita.png"
+   10         },
+   11         {
+   12           "id": 2,
+   13           "nombre": "Pepperoni",
+   14           "descripcion": "Un clásico para los amantes del pepperoni.",
+   15           "ingredientes": "Pepperoni, queso mozzarella, salsa de tomate",
+   16           "precio": "14.99",
+   17           "imagen_url": "http://example.com/images/pepperoni.png"
+   18         }
+   19       ]
+   20     }
+
+
+  ---
+
+  App: users
+
+
+  Esta app maneja la información del perfil de los usuarios.
+
+  1. Obtener perfil de usuario
+
+
+   * Endpoint: GET /api/users/profile/{auth0_user_id}/
+   * Descripción: Recupera los datos del perfil de un usuario específico usando su auth0_id. Es consumido por el
+     hook useInfo.js.
+   * Request: No requiere cuerpo. El auth0_user_id se pasa en la URL.
+   * Response (Formato y Datos):
+       * Un objeto JSON con los datos del perfil del usuario.
+
+
+
+   1     {
+   2       "auth0_id": "auth0|123456789",
+   3       "nombre": "Juan Pérez",
+   4       "email": "juan.perez@example.com",
+   5       "direccion": "Calle Falsa 123, Ciudad Gótica",
+   6       "telefono": "555-123456"
+   7     }
+
+
+  2. Actualizar perfil de usuario
+
+
+   * Endpoint: PATCH /api/users/profile/
+   * Descripción: Actualiza la información del perfil del usuario autenticado (dirección y teléfono). Es consumido
+     por el hook useInfo.js. El usuario se identifica a través del token JWT.
+   * Request (Body):
+       * Un objeto JSON con los campos a actualizar. El auth0_id se envía en el cuerpo para confirmar la identidad
+         del usuario en el backend.
+
+
+
+   1     {
+   2       "nombre": "Juan Pérez",
+   3       "direccion": "Avenida Siempreviva 742",
+   4       "telefono": "555-654321",
+   5       "auth0_id": "auth0|123456789"
+   6     }
+
+   * Response (Formato y Datos):
+       * Devuelve el objeto del perfil del usuario actualizado.
+
+
+
+   1     {
+   2       "auth0_id": "auth0|123456789",
+   3       "nombre": "Juan Pérez",
+   4       "email": "juan.perez@example.com",
+   5       "direccion": "Avenida Siempreviva 742",
+   6       "telefono": "555-654321"
+   7     }
+
+
+  ---
+
+  App: orders
+
+  Esta app es la más compleja, gestionando la creación, visualización y actualización de pedidos.
+
+  1. Crear un nuevo pedido
+
+
+   * Endpoint: POST /api/orders/api/create/
+   * Descripción: Crea un nuevo pedido para el usuario autenticado. Es consumido por useConfirmOrder.js en el
+     proceso de pago.
+   * Request (Body):
+       * Un objeto JSON que contiene el auth0_user_id, el estado inicial, el método de pago y una lista de los
+         productos (items) en el carrito.
+
+
+
+    1     {
+    2       "auth0_user_id": "auth0|123456789",
+    3       "estado": "Pendiente",
+    4       "metodo_pago": "Tarjeta de Credito",
+    5       "items": [
+    6         {
+    7           "product_id": 1,
+    8           "cantidad": 2
+    9         },
+   10         {
+   11           "product_id": 3,
+   12           "cantidad": 1
+   13         }
+   14       ]
+   15     }
+
+   * Response (Formato y Datos):
+       * Devuelve un objeto order con todos los detalles del pedido recién creado, incluyendo los subtotales
+         calculados y la información del usuario.
+
+
+
+    1     {
+    2       "order": {
+    3         "id": 101,
+    4         "total": "41.97",
+    5         "user_info": {
+    6           "direccion": "Avenida Siempreviva 742"
+    7         },
+    8         "items": [
+    9           {
+   10             "product": {
+   11               "nombre": "Margherita Clásica"
+   12             },
+   13             "cantidad": 2,
+   14             "precio_unitario": "12.99",
+   15             "subtotal": "25.98"
+   16           },
+   17           {
+   18             "product": {
+   19               "nombre": "Cuatro Quesos"
+   20             },
+   21             "cantidad": 1,
+   22             "precio_unitario": "15.99",
+   23             "subtotal": "15.99"
+   24           }
+   25         ]
+   26       }
+   27     }
+
+
+
+  2. Obtener todos los pedidos (Admin)
+
+
+   * Endpoint: GET /api/orders/api/
+   * Descripción: Devuelve una lista de todos los pedidos realizados en el sistema. Usado en la vista de
+     administrador (Orders.js a través de useOrders.js).
+   * Request: No requiere cuerpo.
+   * Response (Formato y Datos):
+       * Un objeto con una clave orders que es un array de pedidos. Cada pedido incluye información completa del
+         usuario y los items.
+
+
+
+    1     {
+    2       "orders": [
+    3         {
+    4           "id": 101,
+    5           "estado": "Pendiente",
+    6           "metodo_pago": "Tarjeta de Credito",
+    7           "total": "41.97",
+    8           "fecha_pedido": "2025-07-18T10:30:00Z",
+    9           "user_info": {
+   10             "nombre": "Juan Pérez",
+   11             "direccion": "Avenida Siempreviva 742",
+   12             "telefono": "555-654321"
+   13           },
+   14           "items": [
+   15             {
+   16               "id": 201,
+   17               "product": {
+   18                 "nombre": "Margherita Clásica",
+   19                 "imagen_url": "http://example.com/images/margherita.png",
+   20                 "ingredientes": "...",
+   21                 "precio": "12.99"
+   22               },
+   23               "cantidad": 2,
+   24               "precio_unitario": "12.99",
+   25               "subtotal": "25.98"
+   26             }
+   27           ]
+   28         }
+   29       ]
+   30     }
+
+
+  3. Obtener mis pedidos (Cliente)
+
+
+   * Endpoint: GET /api/orders/api/my-orders/
+   * Descripción: Devuelve el historial de pedidos del usuario autenticado. Consumido por useGetMyOrders.js para la
+     vista de perfil.
+   * Request: No requiere cuerpo.
+   * Response (Formato y Datos):
+       * Similar al endpoint de admin, pero filtrado por el usuario actual.
+
+
+
+    1     {
+    2       "orders": [
+    3         {
+    4           "id": 101,
+    5           "fecha_pedido": "2025-07-18T10:30:00Z",
+    6           "estado": "Entregado",
+    7           "total": "41.97",
+    8           "items": [
+    9             {
+   10               "id": 201,
+   11               "cantidad": 2,
+   12               "product": {
+   13                 "nombre": "Margherita Clásica",
+   14                 "imagen_url": "http://example.com/images/margherita.png",
+   15                 "ingredientes": "...",
+   16                 "precio": "12.99"
+   17               }
+   18             }
+   19           ]
+   20         }
+   21       ]
+   22     }
+
+
+  4. Actualizar estado de un pedido (Admin)
+
+
+   * Endpoint: POST /api/orders/api/{order_id}/update-status/
+   * Descripción: Actualiza el estado de un pedido específico (ej. de "Pendiente" a "Preparando"). Usado por el
+     admin en handleNextStage.js.
+   * Request (Body):
+       * Un objeto JSON con el nuevo estado.
+
+
+
+   1     {
+   2       "estado": "Preparando"
+   3     }
+
+   * Response (Formato y Datos):
+       * Una respuesta de éxito (ej. 200 OK o 204 No Content) es suficiente, ya que el frontend actualiza el estado
+         localmente si la petición es exitosa. Opcionalmente, puedes devolver el pedido actualizado.
+
+
+
+   1     {
+   2       "status": "success",
+   3       "order": {
+   4         "id": 101,
+   5         "estado": "Preparando"
+   6       }
+   7     }
+
+
+
+  Este resumen debería darte una base sólida para construir el API en Django que se ajuste perfectamente a las
+  necesidades de este frontend.

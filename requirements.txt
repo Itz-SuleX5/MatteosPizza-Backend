@@ -1,0 +1,8 @@
+Django>=4.2
+ djangorestframework>=3.14
+ gunicorn
+ python-jose
+ requests 
+dj-database-url
+psycopg2-binary 
+django-cors-headers 
