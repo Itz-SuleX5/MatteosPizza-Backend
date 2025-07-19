@@ -151,6 +151,6 @@ REST_FRAMEWORK = {
         'users.authentication.Auth0Authentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',  # Permitir acceso público por defecto
     ],
 } 
