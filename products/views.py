@@ -67,7 +67,6 @@ def create_product(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def list_products(request):
     products = Product.objects.all()
     serializer = ProductSerializer(products, many=True)
